@@ -44,7 +44,7 @@ class LearningAgent(Agent):
             self.alpha = 0
         else:
             #self.epsilon = self.epsilon - 0.05
-            self.epsilon = math.pow(0.9,self.total_trials)
+            self.epsilon = math.pow(0.985,self.total_trials)
             self.total_trials = self.total_trials + 1
 
         return None
@@ -65,7 +65,7 @@ class LearningAgent(Agent):
         # Set 'state' as a tuple of relevant data for the agent        
         #state = None
         #state = (waypoint,inputs['light'],inputs['left'],inputs['oncoming'],inputs['right'])
-        state = (waypoint,inputs['light'])
+        state = (waypoint,inputs['oncoming'],inputs['right'],inputs['light'])
         
         return state
 
@@ -81,9 +81,10 @@ class LearningAgent(Agent):
 
         #maxQ = None
         
-        state_dict= self.Q[state]
-        action_sorted_list = sorted(state_dict.keys(), key=state_dict.get, reverse=True)
-        maxQ = action_sorted_list[0]
+        #state_dict= self.Q[state]
+        #action_sorted_list = sorted(state_dict.keys(), key=state_dict.get, reverse=True)
+        #maxQ = action_sorted_list[0]
+        maxQ = max(self.Q[state].values())
         return maxQ 
 
     def createQ(self, state):
@@ -97,9 +98,7 @@ class LearningAgent(Agent):
         #   Then, for each action available, set the initial Q-value to 0.0
         
         if self.learning:
-            if state in self.Q:
-                pass
-            else:
+            if state not in self.Q:
                 self.Q[state] = {}
                 self.Q[state][None] = 0.0
                 self.Q[state]['forward'] = 0.0
@@ -125,6 +124,9 @@ class LearningAgent(Agent):
         # When not learning, choose a random action
         # When learning, choose a random action with 'epsilon' probability
         #   Otherwise, choose an action with the highest Q-value for the current state
+        
+        # Action list to contain action associated with maxQ values
+        
         if not self.learning:
             action = random.choice(self.valid_actions)
         else:
@@ -132,10 +134,15 @@ class LearningAgent(Agent):
             if e_p < self.epsilon:
                 action = random.choice(self.valid_actions)
             else:
-                action = self.get_maxQ(state)
+                action_max = self.get_maxQ(state)
+
+                for actions in self.valid_actions:
+                    action_list = [key for key in self.Q[state].keys() if self.Q[state] [key] == action_max]
+                    
+                action = random.choice(action_list)
         return action
 
-
+    
     def learn(self, state, action, reward):
         """ The learn function is called after the agent completes an action and
             receives an award. This function does not consider future rewards 
@@ -216,7 +223,7 @@ def run():
     #   n_test     - discrete number of testing trials to perform, default is 0
     #sim.run(n_test = 10)
     #sim.run()
-    sim.run(n_test = 20, tolerance = 0.05)
+    sim.run(n_test = 20, tolerance = 0.01)
 
 
 if __name__ == '__main__':
